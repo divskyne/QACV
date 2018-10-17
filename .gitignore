@@ -1,7 +1,29 @@
 /target/
-/bin/
+!.mvn/wrapper/maven-wrapper.jar
+
+### STS ###
+.apt_generated
 .classpath
-build.gradle
-eclipse.ini
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+/bin
 mvnw
 mvnw.cmd
+pom.xml
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/build/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
