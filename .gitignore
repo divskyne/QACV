@@ -1,1 +1,7 @@
 /target/
+/bin/
+.classpath
+build.gradle
+eclipse.ini
+mvnw
+mvnw.cmd
