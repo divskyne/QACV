@@ -6,21 +6,25 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Optional;
 
-import javax.validation.Valid;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.data.mongodb.gridfs.GridFsOperations;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.qa.cv.SpringMongoConfig;
 import com.qa.cv.model.Person;
 import com.qa.cv.repo.PersonRepository;
 
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-
-//@CrossOrigin(origins = "http://192.168.1.113", maxAge=3600)
+@CrossOrigin(origins = "*", maxAge=3600)
 @RestController
 @RequestMapping("/api")
 public class PersonController {
@@ -35,7 +39,7 @@ public class PersonController {
 		try {
 			inputStream = multipart.getInputStream();
 			//inputStream = new FileInputStream("C:\\Users\\Admin\\Desktop\\doc.txt");
-			gridOperations.store(inputStream, "doc.txt");
+			gridOperations.store(inputStream, multipart.getOriginalFilename());
 
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
@@ -97,11 +101,8 @@ public class PersonController {
 	}
 	
 	
-	@PutMapping(value = "/login")
-	public String checkLogin(@Valid @RequestBody Person user) {
-		
-		System.out.println("sdjfjdxjfdjs");
-		
+	@RequestMapping(value="/login",method=RequestMethod.POST)
+	public String checkLogin(@RequestBody Person user) {
 		List<Person> p = repository.findByEmail(user.getEmail());
 		
 		for (Person o : p) {
@@ -109,7 +110,7 @@ public class PersonController {
 				return o.getRole();
 			}
 		}
-		return "NOTFOUND";
+		return "Person Not Found";
 	}
 	
 }
