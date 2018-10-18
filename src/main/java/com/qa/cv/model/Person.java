@@ -1,9 +1,10 @@
 package com.qa.cv.model;
 
-import java.util.List;
-
+import org.bson.types.Binary;
 import org.springframework.data.annotation.Id;
-
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
+@Document
 public class Person {
 
 	@Id private String id;
@@ -14,6 +15,12 @@ public class Person {
 	private String password;
 	private String cv;
 	private String state;
+	
+	@Field
+    private String docType;
+
+    @Field
+    private Binary file;
 	
 	public Person()
 	{
@@ -73,6 +80,23 @@ public class Person {
 		this.state = state;
 		return this;
 	}
+
+	public String getDocType() {
+		return docType;
+	}
+
+	public void setDocType(String docType) {
+		this.docType = docType;
+	}
+
+	public Binary getFile() {
+		return file;
+	}
+
+	public void setFile(Binary file) {
+		this.file = file;
+	}
+
 
 
 	
