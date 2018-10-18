@@ -28,8 +28,10 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import com.qa.cv.Application;
+import com.qa.cv.ReportFile;
 import com.qa.cv.model.Person;
 import com.qa.cv.repo.PersonRepository;
+import com.relevantcodes.extentreports.LogStatus;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = {Application.class})
@@ -48,14 +50,13 @@ public class IntegrationTests {
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("{\"email\":\"me@example.com\",\"name\":\"melvin\",\"role\":\"trainer\",\"password\":\"melvin\",\"cv\":\" \",\"state\":\"melvin\"}"));
 //		myRepo.deleteAll();
-//		ReportFile.createReport();
+		ReportFile.createReport();
 }
-//	@After
-//	public void clearDBED() {
-//		ReportFile.endReport;
-//		ReportFile.flushReport
+	@After
+	public void clearDBED() {
+		ReportFile.endReport();
 //		myRepo.deleteAll();
-//	}
+	}
 ////	
 	@Test
 //	@Ignore
@@ -179,18 +180,19 @@ public class IntegrationTests {
 	
 	@Test
 	public void checkLoginTest()throws Exception{
-
+		
+		ReportFile.createTest("Check Login");
 		MvcResult result = mvc.perform(post("/api/login")
 		.contentType(MediaType.APPLICATION_JSON)
 		.content("{\"email\":\"me@example.com\",\"password\":\"melvin\"}"))
 		.andExpect(status().isOk()).andReturn();
 		
 		if(result.getResponse().getContentAsString().equals("trainer")) {
-//			ReportFile.LogStatusTest(Logstatus.PASS, "Login Successful");
+			ReportFile.logStatusTest(LogStatus.PASS, "Login Successful");
 			System.out.println(result.getResponse().getContentAsString());
 		}
 		else {
-//			ReportFile.LogStatusTest(Logstatus.FAIL, "Login fail");
+			ReportFile.logStatusTest(LogStatus.FAIL, "Login failed");
 			System.out.println(result.getResponse().getContentAsString());
 		}
 	}
