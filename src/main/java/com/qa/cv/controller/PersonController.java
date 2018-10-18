@@ -3,9 +3,13 @@ package com.qa.cv.controller;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Optional;
 
+import org.apache.tomcat.util.buf.HexUtils;
+import org.bson.types.Binary;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -22,7 +26,9 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.qa.cv.SpringMongoConfig;
+import com.qa.cv.model.Cv;
 import com.qa.cv.model.Person;
+import com.qa.cv.repo.CVRepository;
 import com.qa.cv.repo.PersonRepository;
 
 @CrossOrigin(origins = "*", maxAge=3600)
@@ -32,6 +38,9 @@ public class PersonController {
 	@Autowired
 	private PersonRepository repository;
 	
+	@Autowired
+	private CVRepository cvRepository;
+	
 	private String storeFile(MultipartFile multipart, String id) {
 		ApplicationContext ctx = new AnnotationConfigApplicationContext(SpringMongoConfig.class);
 		GridFsOperations gridOperations = (GridFsOperations) ctx.getBean("gridFsTemplate");
@@ -40,7 +49,7 @@ public class PersonController {
 		try {
 			inputStream = multipart.getInputStream();
 			ObjectId o = gridOperations.store(inputStream, multipart.getOriginalFilename());
-			repository.save(repository.findById(id).get().setCv(o.toHexString()));
+			//repository.save(repository.findById(id).get().setCv(o.toHexString()));
 
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
@@ -63,7 +72,26 @@ public class PersonController {
 	
 	@PostMapping("/{id}/upload")
 	public String singleFileUpload(@PathVariable String id, @RequestParam("file") MultipartFile multipart) {
-		return storeFile(multipart, id);
+		//return storeFile(multipart, id);
+		MessageDigest md = null;
+		try {
+			md = MessageDigest.getInstance("MD5");
+		} catch (NoSuchAlgorithmException e1) {
+			e1.printStackTrace();
+			return "fail";
+		}
+		Binary b = null;
+		try {
+			b = new Binary(multipart.getBytes());
+		} catch (IOException e) {
+			e.printStackTrace();
+			return "fail";
+		}
+		Cv c = new Cv(b);
+		cvRepository.save(c);
+		cvRepository.findById(c.getId());
+		repository.findByEmail(id);
+		return "pass";
 	}
 	
 	@RequestMapping(value = "/people", method = RequestMethod.GET)
