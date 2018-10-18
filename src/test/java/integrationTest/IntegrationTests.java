@@ -24,6 +24,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import com.qa.cv.Application;
@@ -174,5 +175,24 @@ public class IntegrationTests {
 						"    }"))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.email", is("D")));}
+		}
+	
+	@Test
+	public void checkLoginTest()throws Exception{
+
+		MvcResult result = mvc.perform(post("/api/login")
+		.contentType(MediaType.APPLICATION_JSON)
+		.content("{\"email\":\"me@example.com\",\"password\":\"melvin\"}"))
+		.andExpect(status().isOk()).andReturn();
+		
+		if(result.getResponse().getContentAsString().equals("trainer")) {
+//			ReportFile.LogStatusTest(Logstatus.PASS, "Login Successful");
+			System.out.println(result.getResponse().getContentAsString());
+		}
+		else {
+//			ReportFile.LogStatusTest(Logstatus.FAIL, "Login fail");
+			System.out.println(result.getResponse().getContentAsString());
+		}
 	}
-	}
+	
+}
