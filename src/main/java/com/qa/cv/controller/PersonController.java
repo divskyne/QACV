@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Optional;
 
+import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
@@ -31,22 +32,22 @@ public class PersonController {
 	@Autowired
 	private PersonRepository repository;
 	
-	private String storeFile(MultipartFile multipart) {
+	private String storeFile(MultipartFile multipart, String id) {
 		ApplicationContext ctx = new AnnotationConfigApplicationContext(SpringMongoConfig.class);
 		GridFsOperations gridOperations = (GridFsOperations) ctx.getBean("gridFsTemplate");
 
 		InputStream inputStream = null;
 		try {
 			inputStream = multipart.getInputStream();
-			//inputStream = new FileInputStream("C:\\Users\\Admin\\Desktop\\doc.txt");
-			gridOperations.store(inputStream, multipart.getOriginalFilename());
+			ObjectId o = gridOperations.store(inputStream, multipart.getOriginalFilename());
+			repository.save(repository.findById(id).get().setCv(o.toHexString()));
 
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 			return "fail";
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
+			return "fail";
 		} finally {
 			if (inputStream != null) {
 				try {
@@ -60,10 +61,9 @@ public class PersonController {
 		return "pass";
 	}
 	
-	@PostMapping("/upload")
-	public String singleFileUpload(@RequestParam("file") MultipartFile multipart) {
-		
-		return storeFile(multipart);
+	@PostMapping("/{id}/upload")
+	public String singleFileUpload(@PathVariable String id, @RequestParam("file") MultipartFile multipart) {
+		return storeFile(multipart, id);
 	}
 	
 	@RequestMapping(value = "/people", method = RequestMethod.GET)

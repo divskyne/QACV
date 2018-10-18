@@ -70,8 +70,9 @@ public class Person {
 	public String getCv() {
 		return cv;
 	}
-	public void setCv(String cv) {
+	public Person setCv(String cv) {
 		this.cv = cv;
+		return this;
 	}
 	public String getState() {
 		return state;
