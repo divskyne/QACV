@@ -1,21 +1,25 @@
 package com.qa.cv.controller;
 
+import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Optional;
 
-import org.apache.tomcat.util.buf.HexUtils;
-import org.bson.types.Binary;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.ResponseBuilder;
+
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.data.mongodb.gridfs.GridFsOperations;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -25,8 +29,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.mongodb.DB;
+import com.mongodb.MongoClient;
+import com.mongodb.gridfs.GridFS;
+import com.mongodb.gridfs.GridFSDBFile;
+import com.mongodb.gridfs.GridFSInputFile;
 import com.qa.cv.SpringMongoConfig;
-import com.qa.cv.model.Cv;
 import com.qa.cv.model.Person;
 import com.qa.cv.repo.CVRepository;
 import com.qa.cv.repo.PersonRepository;
@@ -41,22 +49,79 @@ public class PersonController {
 	@Autowired
 	private CVRepository cvRepository;
 	
-	private String storeFile(MultipartFile multipart, String id) {
+	@GetMapping("/{id}/cv")
+	@Produces(MediaType.APPLICATION_OCTET_STREAM)
+	public Response singleFileRetrieve(@PathVariable String id)
+	{
+		try {
+			return findFileFromDB(id);
+		} catch (IOException e) {
+			e.printStackTrace();
+			
+		}
+		return null;
+	}
+	
+	@PostMapping("/{id}/upload")
+	public String singleFileUpload(@PathVariable String id, @RequestParam("file") MultipartFile multipart) {
+		
+		return saveFileToDB(multipart);
+	}
+	
+	public Response findFileFromDB(String id) throws IOException {
+		
+		String cvFile = findFileFromPerson(id);
+		ObjectId objectid = new ObjectId(cvFile);
+		
+		MongoClient mongo = new MongoClient("localhost", 27017);
+	    DB db = mongo.getDB("disco1");
+
+	    GridFS gridFs = new GridFS(db);
+
+	    GridFSDBFile outputFile = gridFs.find(objectid);
+
+	    String location = outputFile.getFilename();
+	    
+	    File file = new File(location);
+	    outputFile.writeTo(file);
+	    mongo.close();
+		ResponseBuilder response = Response.ok((Object) file);
+		response.header("Content-Disposition", "attachment; filename=newfile.zip");
+		response.entity(file);
+		return response.build();
+	}
+	
+	private String findFileFromPerson(String id) {
+		return repository.findById(id).get().getCv();
+	}
+
+	public File convert(MultipartFile file) throws IOException
+	{    
+	    File convFile = new File(file.getOriginalFilename());
+	    convFile.createNewFile(); 
+	    FileOutputStream fos = new FileOutputStream(convFile); 
+	    fos.write(file.getBytes());
+	    fos.close(); 
+	    return convFile;
+	}
+	
+	private String saveFileToDB(MultipartFile multipart) {
+		
 		ApplicationContext ctx = new AnnotationConfigApplicationContext(SpringMongoConfig.class);
 		GridFsOperations gridOperations = (GridFsOperations) ctx.getBean("gridFsTemplate");
 
 		InputStream inputStream = null;
 		try {
 			inputStream = multipart.getInputStream();
-			ObjectId o = gridOperations.store(inputStream, multipart.getOriginalFilename());
-			//repository.save(repository.findById(id).get().setCv(o.toHexString()));
+			//inputStream = new FileInputStream("C:\\Users\\Admin\\Desktop\\doc.txt");
+			gridOperations.store(inputStream, multipart.getOriginalFilename());
 
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 			return "fail";
 		} catch (IOException e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
-			return "fail";
 		} finally {
 			if (inputStream != null) {
 				try {
@@ -68,32 +133,26 @@ public class PersonController {
 			}
 		}
 		return "pass";
-	}
-	
-	@PostMapping("/{id}/upload")
-	public String singleFileUpload(@PathVariable String id, @RequestParam("file") MultipartFile multipart) {
-		//return storeFile(multipart, id);
-		MessageDigest md = null;
+		
+		/*MongoClient mongo = new MongoClient("localhost", 27017);
+	    DB db = mongo.getDB("disco1");
+
+	    GridFS gridFs = new GridFS(db);
+
+	    GridFSInputFile gridFsInputFile = null;
 		try {
-			md = MessageDigest.getInstance("MD5");
-		} catch (NoSuchAlgorithmException e1) {
-			e1.printStackTrace();
-			return "fail";
-		}
-		Binary b = null;
-		try {
-			b = new Binary(multipart.getBytes());
+			gridFsInputFile = gridFs.createFile(convert(multipart));
 		} catch (IOException e) {
 			e.printStackTrace();
 			return "fail";
 		}
-		Cv c = new Cv(b);
-		cvRepository.save(c);
-		cvRepository.findById(c.getId());
-		repository.findByEmail(id);
-		return "pass";
+
+	    gridFsInputFile.setFilename(multipart.getOriginalFilename());
+
+	    gridFsInputFile.save();
+	    return "pass";*/
 	}
-	
+
 	@RequestMapping(value = "/people", method = RequestMethod.GET)
 	public List<Person> getPeople() {
 		return repository.findAll();

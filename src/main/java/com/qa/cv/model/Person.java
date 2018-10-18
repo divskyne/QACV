@@ -14,7 +14,7 @@ public class Person {
 	private String name;
 	private String role;
 	private String password;
-	private Cv cv;
+	private String cv;
 	private String state;
     private String docType;
     private Binary file;
@@ -64,10 +64,11 @@ public class Person {
 		this.password = password;
 	}
 	public String getCv() {
-		return HexUtils.toHexString(cv.getFile().getData());
+		return cv;
+		//return HexUtils.toHexString(cv.getFile().getData());
 	}
-	public Person setCv(Cv cv) {
-		this.cv = cv;
+	public Person setCv(String string) {
+		this.cv = string;
 		return this;
 	}
 	public String getState() {
