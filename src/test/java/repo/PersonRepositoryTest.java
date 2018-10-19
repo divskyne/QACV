@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.junit.Before;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -63,12 +64,18 @@ public class PersonRepositoryTest {
 				ReportFile.logStatusTest(LogStatus.FAIL, "Person has not been retrieved by Email");
 			}
 		}
-		//findByEmail will return a list of ONE person with that email
+		
 		
 	}
 	
 	@After
 	public void tearDown()
+	{
+		ReportFile.endTest();
+	}
+	
+	@AfterClass
+	public void finish()
 	{
 		ReportFile.endReport();
 	}
