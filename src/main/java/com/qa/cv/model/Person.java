@@ -1,5 +1,6 @@
 package com.qa.cv.model;
 
+import org.apache.tomcat.util.buf.HexUtils;
 import org.bson.types.Binary;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -15,11 +16,7 @@ public class Person {
 	private String password;
 	private String cv;
 	private String state;
-	
-	@Field
     private String docType;
-
-    @Field
     private Binary file;
 	
 	public Person()
@@ -33,7 +30,6 @@ public class Person {
 		this.name = name;
 		this.role = role;
 		this.password = password;
-		this.cv = cv;
 		this.state = state;
 	}
 
@@ -69,9 +65,11 @@ public class Person {
 	}
 	public String getCv() {
 		return cv;
+		//return HexUtils.toHexString(cv.getFile().getData());
 	}
-	public void setCv(String cv) {
-		this.cv = cv;
+	public Person setCv(String string) {
+		this.cv = string;
+		return this;
 	}
 	public String getState() {
 		return state;
