@@ -24,6 +24,12 @@ public class Person {
 		
 	}
 	
+	public Person(String id, String role)
+	{
+		this.id = id;
+		this.role = role;
+	}
+	
 	public Person(String email, String name, String role, String password, String cv, String state) {
 		super();
 		this.email = email;

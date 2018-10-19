@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -37,60 +38,71 @@ import com.qa.cv.repo.PersonRepository;
 @RestController
 @RequestMapping("/api")
 public class PersonController {
+	
+	private static final String WORD = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+	
 	@Autowired
 	private PersonRepository repository;
 	
 	private String saveFileToDB(MultipartFile multipart, String id) {
-
-		MongoClient mongo = new MongoClient("localhost", 27017);
-		DB db = mongo.getDB("disco1");
-
-		GridFS gridFs = new GridFS(db);
-
-		GridFSInputFile gridFsInputFile = null;
-		try {
-			File convFile = new File(multipart.getOriginalFilename());
-		    convFile.createNewFile(); 
-		    FileOutputStream fos = new FileOutputStream(convFile); 
-		    fos.write(multipart.getBytes());
-		    fos.close(); 
-			gridFsInputFile = gridFs.createFile(convFile);
-		} catch (IOException e) {
-			e.printStackTrace();
-			return "fail";
-		}
-
-		gridFsInputFile.setFilename(multipart.getOriginalFilename());
-		gridFsInputFile.setContentType(multipart.getContentType());
 		
-		repository.save(repository.findById(id).get().setCv(gridFsInputFile.getId().toString()));
+		if (!multipart.getContentType().equals(WORD))
+		{
+			return "Unsupported file type! "+multipart.getContentType();
+		}
+		
+		else
+		{
+			MongoClient mongo = new MongoClient("localhost", 27017);
+			DB db = mongo.getDB("disco1");
 
-		gridFsInputFile.save();
-		return "pass";
+			GridFS gridFs = new GridFS(db);
+
+			GridFSInputFile gridFsInputFile = null;
+			try {
+				File convFile = new File(multipart.getOriginalFilename());
+			    convFile.createNewFile(); 
+			    FileOutputStream fos = new FileOutputStream(convFile); 
+			    fos.write(multipart.getBytes());
+			    fos.close(); 
+				gridFsInputFile = gridFs.createFile(convFile);
+			} catch (IOException e) {
+				e.printStackTrace();
+				return "fail";
+			}
+
+			gridFsInputFile.setFilename(multipart.getOriginalFilename());
+			gridFsInputFile.setContentType(multipart.getContentType());
+			
+			repository.save(repository.findById(id).get().setCv(gridFsInputFile.getId().toString()));
+
+			gridFsInputFile.save();
+			return "pass";
+		}
+		
 		}
 	public ResponseEntity<byte[]> findFileFromDB(String id) throws IOException {
 		ByteArrayOutputStream outputStream = null;
 		HttpHeaders headers = null;
-	try {
-			String cvFile = repository.findById(id).get().getCv();
-			ObjectId objectid = new ObjectId(cvFile);
-			MongoClient mongo = new MongoClient("localhost", 27017);
-		    @SuppressWarnings("deprecation")
-			DB db = mongo.getDB("disco1");
-		    GridFS gridFs = new GridFS(db);
-		    GridFSDBFile outputFile = gridFs.find(objectid);
-		    
-			InputStream inputImage = outputFile.getInputStream();
-			outputStream = new ByteArrayOutputStream();
-	        byte[] buffer = new byte[512];
-	        int l = inputImage.read(buffer);
-	        while(l >= 0) {
-	            outputStream.write(buffer, 0, l);
-	            l = inputImage.read(buffer);
-	        }
-	        for (Object b : outputStream.toByteArray()) {
-				b.toString();
-			}
+		try {
+				String cvFile = repository.findById(id).get().getCv();
+				ObjectId objectid = new ObjectId(cvFile);
+				MongoClient mongo = new MongoClient("localhost", 27017);
+				DB db = mongo.getDB("disco1");
+			    GridFS gridFs = new GridFS(db);
+			    GridFSDBFile outputFile = gridFs.find(objectid);
+			    
+				InputStream inputImage = outputFile.getInputStream();
+				outputStream = new ByteArrayOutputStream();
+		        byte[] buffer = new byte[512];
+		        int l = inputImage.read(buffer);
+		        while(l >= 0) {
+		            outputStream.write(buffer, 0, l);
+		            l = inputImage.read(buffer);
+		        }
+		        for (Object b : outputStream.toByteArray()) {
+					b.toString();
+				}
 	        mongo.close();
 	        headers = new HttpHeaders();
 	        headers.set("Content-Type", outputFile.getContentType());
@@ -163,16 +175,28 @@ public class PersonController {
 		return repository.save(repository.findById(id).get().setState(state));
 	}
 	
+/*	@RequestMapping(value="/people/find?{search}",method=RequestMethod.GET)
+	public Optional<Person> updateState(@PathVariable("search") String search) {
+		Collection<Person> persons = null;
+		
+		repository.findAll().stream().filter(p -> p.getEmail().equals(search));
+		
+		persons.addAll()
+		;
+		return persons;
+	}*/
+	
 	
 	@RequestMapping(value="/login",method=RequestMethod.POST)
-	public String checkLogin(@RequestBody Person user) {
+	public Person checkLogin(@RequestBody Person user) {
 		List<Person> p = repository.findByEmail(user.getEmail());
 		
 		for (Person o : p) {
 			if (o.getPassword().equals(user.getPassword())) {
-				return o.getRole();
+				Person person = new Person(o.getId(), o.getRole());
+				return person;
 			}
 		}
-		return "Person Not Found";
+		return null;
 	}	
 }
