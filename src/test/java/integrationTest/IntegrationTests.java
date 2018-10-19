@@ -43,9 +43,9 @@ public class IntegrationTests {
 
 	@Before
 	public void clearDB() throws Exception {
+		myRepo.deleteAll();
 		mvc.perform(post("/api/people").contentType(MediaType.APPLICATION_JSON).content(
 				"{\"email\":\"me@example.com\",\"name\":\"melvin\",\"role\":\"trainer\",\"password\":\"melvin\",\"cv\":\" \",\"state\":\"melvin\"}"));
-//		myRepo.deleteAll();
 		ReportFile.createReport();
 	}
 
@@ -101,7 +101,7 @@ public class IntegrationTests {
 	public void addPersonToDatabaseTest() throws Exception {
 		ReportFile.createTest("Adding a person to the database");
 		MvcResult result = mvc.perform(post("/api/people").contentType(MediaType.APPLICATION_JSON).content(
-				"{\"email\":\"me@example.com\",\"name\":\"melvin\",\"role\":\"trainer\",\"password\":\"melvin\",\"cv\":\" \",\"state\":\"melvin\"}"))
+				"{\"email\":\"me@example1.com\",\"name\":\"melvin\",\"role\":\"trainer\",\"password\":\"melvin\",\"cv\":\" \",\"state\":\"melvin\"}"))
 				.andExpect(status().isOk()).andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
 				.andReturn();
 
@@ -142,12 +142,12 @@ public class IntegrationTests {
 			String id = p.getId();
 			result = mvc
 					.perform(put("/api/people/" + id).contentType(MediaType.APPLICATION_JSON)
-							.content("{\n" + "        \"id\": \"" + id + "\",\n" + "        \"email\": \"D\",\n"
+							.content("{\n" + "        \"id\": \"" + id + "\",\n" + "        \"email\": \"me@example.com\",\n"
 									+ "        \"name\": \"test1\",\n" + "        \"role\": \"trainer\",\n"
 									+ "        \"password\": \"melvin\",\n" + "        \"cv\": \"{ }\",\n"
 									+ "        \"state\": \"melvin\",\n" + "        \"docType\": null,\n"
 									+ "        \"file\": null\n" + "    }"))
-					.andExpect(status().isOk()).andExpect(jsonPath("$.email", is("D"))).andReturn();
+					.andExpect(status().isOk()).andExpect(jsonPath("$.email", is("me@example.com"))).andReturn();
 		}
 		if(result.getResponse().getContentAsString().contains("test1")) {
 			ReportFile.logStatusTest(LogStatus.PASS, "Person has been updated");

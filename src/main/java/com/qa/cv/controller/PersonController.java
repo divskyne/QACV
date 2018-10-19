@@ -35,6 +35,7 @@ import com.mongodb.gridfs.GridFS;
 import com.mongodb.gridfs.GridFSDBFile;
 import com.mongodb.gridfs.GridFSInputFile;
 import com.qa.cv.SpringMongoConfig;
+import com.qa.cv.exception.ResourceNotFoundException;
 import com.qa.cv.model.Person;
 import com.qa.cv.repo.CVRepository;
 import com.qa.cv.repo.PersonRepository;
@@ -160,12 +161,26 @@ public class PersonController {
 	
 	@RequestMapping(value = "/people/{id}", method = RequestMethod.PUT)
 	  public Person modifyPersonById(@PathVariable String id, @RequestBody Person person) {
-	    repository.save(person);
-	    return person;
+		List<Person> personList = repository.findByEmail(person.getEmail());
+		for(Person p:personList) {
+			if(person.getEmail().equalsIgnoreCase(p.getEmail())) {
+				repository.save(person);
+				return person;
+			} else {
+				throw new ResourceNotFoundException("Can't change email address", "Can't change email address", person);
+			}
+		}
+		throw new ResourceNotFoundException("Can't change email address", "Can't change email address", person);
 	  }
 	
 	@RequestMapping(value="/people",method=RequestMethod.POST)
 	public Person createPerson(@RequestBody Person person) {
+		List<Person> personList = repository.findByEmail(person.getEmail());
+		for(Person p:personList) {
+			if(person.getEmail().equalsIgnoreCase(p.getEmail())) {
+				throw new ResourceNotFoundException("Duplicate email", "Duplicate email", p);
+			}
+		}
 		repository.save(person);
 		return person;
 	}
