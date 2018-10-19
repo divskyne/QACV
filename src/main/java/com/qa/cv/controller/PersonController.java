@@ -114,7 +114,6 @@ public class PersonController {
 		InputStream inputStream = null;
 		try {
 			inputStream = multipart.getInputStream();
-			//inputStream = new FileInputStream("C:\\Users\\Admin\\Desktop\\doc.txt");
 			gridOperations.store(inputStream, multipart.getOriginalFilename());
 
 		} catch (FileNotFoundException e) {
@@ -134,24 +133,6 @@ public class PersonController {
 			}
 		}
 		return "pass";
-		
-		/*MongoClient mongo = new MongoClient("localhost", 27017);
-	    DB db = mongo.getDB("disco1");
-
-	    GridFS gridFs = new GridFS(db);
-
-	    GridFSInputFile gridFsInputFile = null;
-		try {
-			gridFsInputFile = gridFs.createFile(convert(multipart));
-		} catch (IOException e) {
-			e.printStackTrace();
-			return "fail";
-		}
-
-	    gridFsInputFile.setFilename(multipart.getOriginalFilename());
-
-	    gridFsInputFile.save();
-	    return "pass";*/
 	}
 
 	@RequestMapping(value = "/people", method = RequestMethod.GET)
