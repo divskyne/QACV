@@ -12,7 +12,6 @@
 /bin
 mvnw
 mvnw.cmd
-pom.xml
 
 ### IntelliJ IDEA ###
 .idea
