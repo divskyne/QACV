@@ -181,8 +181,8 @@ public class PersonController {
 		return repository.save(repository.findById(id).get().setState(state));
 	}
 	
-	@RequestMapping(value="/people/{search}",method=RequestMethod.POST)
-	public List<Person> search(@PathVariable("search") String search) {
+	@RequestMapping(value="/find",method=RequestMethod.GET)
+	public List<Person> search(@RequestParam(value="search") String search) {
 		List<Person> people = repository.findAll().stream().filter(p -> {
 			if(p.getEmail().contains(search))
 			{
@@ -201,8 +201,6 @@ public class PersonController {
 	@RequestMapping(value="/login",method=RequestMethod.POST)
 	public Person checkLogin(@RequestBody Person user) {
 		List<Person> p = repository.findByEmail(user.getEmail());
-		System.out.println(user.getEmail());
-		System.out.println(user.getPassword());
 		for (Person o : p) {
 			if (o.getPassword().equals(user.getPassword())) {
 				Person person = new Person(o.getId(), o.getRole());
