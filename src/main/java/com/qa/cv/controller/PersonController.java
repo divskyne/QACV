@@ -4,9 +4,13 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.tomcat.util.http.fileupload.ByteArrayOutputStream;
 import org.bson.types.ObjectId;
@@ -175,16 +179,21 @@ public class PersonController {
 		return repository.save(repository.findById(id).get().setState(state));
 	}
 	
-/*	@RequestMapping(value="/people/find?{search}",method=RequestMethod.GET)
-	public Optional<Person> updateState(@PathVariable("search") String search) {
-		Collection<Person> persons = null;
-		
-		repository.findAll().stream().filter(p -> p.getEmail().equals(search));
-		
-		persons.addAll()
-		;
-		return persons;
-	}*/
+	@RequestMapping(value="/people/{search}",method=RequestMethod.POST)
+	public List<Person> search(@PathVariable("search") String search) {
+		List<Person> peopleEmail = repository.findAll().stream().filter(p -> {
+			if(p.getEmail().contains(search))
+			{
+				return true;
+			}
+			else if (p.getName().contains(search))
+			{
+				return true;
+			}
+			return false;
+			}).collect(Collectors.toList());
+		return peopleEmail;
+	}
 	
 	
 	@RequestMapping(value="/login",method=RequestMethod.POST)
