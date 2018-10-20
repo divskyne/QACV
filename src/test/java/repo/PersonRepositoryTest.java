@@ -44,7 +44,7 @@ public class PersonRepositoryTest {
 	public void retrieveByEmailTest()
 	{
 		ReportFile.createTest("Retrieve CV By Email");
-		Person model1 = new Person("lwhamilton03@outlook.com", "Lucy Hamilton", "Trainee", "password", "CVLink1", "unapproved");
+		Person model1 = new Person("lwhamilton03@outlook.com", "Lucy Hamilton", "Trainee", "password", "unapproved");
 		myRepo.save(model1); 
 		System.out.println(model1.getEmail());
 				

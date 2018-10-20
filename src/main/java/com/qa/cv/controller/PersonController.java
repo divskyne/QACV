@@ -4,14 +4,13 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
-import java.util.Collection;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
+import org.apache.tomcat.util.buf.HexUtils;
 import org.apache.tomcat.util.http.fileupload.ByteArrayOutputStream;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -151,13 +150,16 @@ public class PersonController {
 	  }
 	
 	@RequestMapping(value="/people",method=RequestMethod.POST)
-	public Person createPerson(@RequestBody Person person) {
+	public Person createPerson(@RequestBody Person person) throws NoSuchAlgorithmException {
 		List<Person> personList = repository.findByEmail(person.getEmail());
 		for(Person p:personList) {
 			if(person.getEmail().equalsIgnoreCase(p.getEmail())) {
 				throw new ResourceNotFoundException("Duplicate email", "Duplicate email", p);
 			}
 		}
+		MessageDigest md5 = MessageDigest.getInstance("MD5");
+		
+		person.setPassword(HexUtils.toHexString(md5.digest(person.getPassword().getBytes())));
 		repository.save(person);
 		return person;
 	}
@@ -181,7 +183,7 @@ public class PersonController {
 	
 	@RequestMapping(value="/people/{search}",method=RequestMethod.POST)
 	public List<Person> search(@PathVariable("search") String search) {
-		List<Person> peopleEmail = repository.findAll().stream().filter(p -> {
+		List<Person> people = repository.findAll().stream().filter(p -> {
 			if(p.getEmail().contains(search))
 			{
 				return true;
@@ -192,20 +194,21 @@ public class PersonController {
 			}
 			return false;
 			}).collect(Collectors.toList());
-		return peopleEmail;
+		return people;
 	}
 	
 	
 	@RequestMapping(value="/login",method=RequestMethod.POST)
 	public Person checkLogin(@RequestBody Person user) {
 		List<Person> p = repository.findByEmail(user.getEmail());
-		
+		System.out.println(user.getEmail());
+		System.out.println(user.getPassword());
 		for (Person o : p) {
 			if (o.getPassword().equals(user.getPassword())) {
 				Person person = new Person(o.getId(), o.getRole());
 				return person;
 			}
 		}
-		return null;
+		return new Person();
 	}	
 }

@@ -30,7 +30,7 @@ public class Person {
 		this.role = role;
 	}
 	
-	public Person(String email, String name, String role, String password, String cv, String state) {
+	public Person(String email, String name, String role, String password, String state) {
 		super();
 		this.email = email;
 		this.name = name;
