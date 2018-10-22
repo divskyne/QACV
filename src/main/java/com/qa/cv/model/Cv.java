@@ -1,8 +1,11 @@
 package com.qa.cv.model;
 
-import org.bson.types.Binary;
+import java.io.File;
+
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+
+import com.mongodb.gridfs.GridFSInputFile;
 
 @Document
 public class Cv {
@@ -11,35 +14,21 @@ public class Cv {
 	private String id;
 
 	private String files_id;
-	private Binary file;
+	
+	public String getFiles_id() {
+		return files_id;
+	}
 	
 	public Cv() {
 		
 	}
 	
-	public Cv(String s) {
-		
-	}
-	
-	public Cv(Binary file) {
+	public Cv(String files_id) {
 		super();
-		this.file = file;
+		this.files_id = files_id;
 	}
 	
 	public String getId() {
 		return id;
 	}
-	
-	public Binary getFile() {
-		return file;
-	}
-	public void setFile(Binary file) {
-		this.file = file;
-	}
-	
-	@Override
-	public String toString() {
-		return this.files_id;
-	}
-
 }

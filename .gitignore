@@ -13,6 +13,7 @@
 /bin
 mvnw
 mvnw.cmd
+*.docx
 
 ### IntelliJ IDEA ###
 .idea

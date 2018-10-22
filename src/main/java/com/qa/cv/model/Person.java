@@ -1,10 +1,11 @@
 package com.qa.cv.model;
 
-import org.apache.tomcat.util.buf.HexUtils;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.bson.types.Binary;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.mapping.Field;
 @Document
 public class Person {
 
@@ -14,29 +15,33 @@ public class Person {
 	private String name;
 	private String role;
 	private String password;
-	private String cv;
+	private List<Cv> cvs;
+	private Cv cv;
 	private String state;
     private String docType;
     private Binary file;
 	
 	public Person()
 	{
-		
+		cvs = new ArrayList<Cv>();
 	}
 	
 	public Person(String id, String role)
 	{
 		this.id = id;
 		this.role = role;
+		cvs = new ArrayList<Cv>();
 	}
 	
-	public Person(String email, String name, String role, String password, String cv, String state) {
+	public Person(String email, String name, String role, String password, String state) {
 		super();
 		this.email = email;
 		this.name = name;
 		this.role = role;
 		this.password = password;
 		this.state = state;
+		this.cv = new Cv();
+		cvs = new ArrayList<Cv>();
 	}
 
 	public String getId() {
@@ -69,14 +74,22 @@ public class Person {
 	public void setPassword(String password) {
 		this.password = password;
 	}
-	public String getCv() {
+	public Cv getCv() {
 		return cv;
 		//return HexUtils.toHexString(cv.getFile().getData());
 	}
-	public Person setCv(String string) {
+	
+	public List<Cv> getCvs() {
+		return cvs;
+		//return HexUtils.toHexString(cv.getFile().getData());
+	}
+	
+	public Person setCv(Cv string) {
 		this.cv = string;
+		cvs.add(string);
 		return this;
 	}
+	
 	public String getState() {
 		return state;
 	}
@@ -99,9 +112,5 @@ public class Person {
 
 	public void setFile(Binary file) {
 		this.file = file;
-	}
-
-
-
-	
+	}	
 }

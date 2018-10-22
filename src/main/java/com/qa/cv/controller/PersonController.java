@@ -4,19 +4,20 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
-import java.util.Collection;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
+import org.apache.tomcat.util.buf.HexUtils;
 import org.apache.tomcat.util.http.fileupload.ByteArrayOutputStream;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -35,7 +36,9 @@ import com.mongodb.gridfs.GridFS;
 import com.mongodb.gridfs.GridFSDBFile;
 import com.mongodb.gridfs.GridFSInputFile;
 import com.qa.cv.exception.ResourceNotFoundException;
+import com.qa.cv.model.Cv;
 import com.qa.cv.model.Person;
+import com.qa.cv.repo.CVRepository;
 import com.qa.cv.repo.PersonRepository;
 
 @CrossOrigin(origins = "*", maxAge=3600)
@@ -47,6 +50,9 @@ public class PersonController {
 	
 	@Autowired
 	private PersonRepository repository;
+	
+	@Autowired
+	private CVRepository cvrepository;
 	
 	private String saveFileToDB(MultipartFile multipart, String id) {
 		
@@ -63,8 +69,9 @@ public class PersonController {
 			GridFS gridFs = new GridFS(db);
 
 			GridFSInputFile gridFsInputFile = null;
+			File convFile = null;
 			try {
-				File convFile = new File(multipart.getOriginalFilename());
+				convFile = new File(multipart.getOriginalFilename());
 			    convFile.createNewFile(); 
 			    FileOutputStream fos = new FileOutputStream(convFile); 
 			    fos.write(multipart.getBytes());
@@ -72,32 +79,33 @@ public class PersonController {
 				gridFsInputFile = gridFs.createFile(convFile);
 			} catch (IOException e) {
 				e.printStackTrace();
-				return "fail";
+				return "Failed to upload file: "+multipart.getOriginalFilename();
 			}
 
 			gridFsInputFile.setFilename(multipart.getOriginalFilename());
 			gridFsInputFile.setContentType(multipart.getContentType());
-			
-			repository.save(repository.findById(id).get().setCv(gridFsInputFile.getId().toString()));
+			Cv cv2 = new Cv(gridFsInputFile.getId().toString());
+			cvrepository.save(cv2);
+			repository.save(repository.findById(id).get().setCv(cv2));
 
 			gridFsInputFile.save();
-			return "pass";
+			return multipart.getOriginalFilename()+" has been uploaded!";
 		}
 		
 		}
 	public ResponseEntity<byte[]> findFileFromDB(String id) throws IOException {
-		ByteArrayOutputStream outputStream = null;
-		HttpHeaders headers = null;
+		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+		HttpHeaders headers = new HttpHeaders();
+		GridFSDBFile outputFile = null;
 		try {
-				String cvFile = repository.findById(id).get().getCv();
+				String cvFile = repository.findById(id).get().getCv().getFiles_id();
 				ObjectId objectid = new ObjectId(cvFile);
 				MongoClient mongo = new MongoClient("localhost", 27017);
 				DB db = mongo.getDB("disco1");
 			    GridFS gridFs = new GridFS(db);
-			    GridFSDBFile outputFile = gridFs.find(objectid);
+			    outputFile = gridFs.find(objectid);
 			    
 				InputStream inputImage = outputFile.getInputStream();
-				outputStream = new ByteArrayOutputStream();
 		        byte[] buffer = new byte[512];
 		        int l = inputImage.read(buffer);
 		        while(l >= 0) {
@@ -108,15 +116,20 @@ public class PersonController {
 					b.toString();
 				}
 	        mongo.close();
-	        headers = new HttpHeaders();
 	        headers.set("Content-Type", outputFile.getContentType());
-	        System.out.println(headers);
+	        headers.set("Accept-Ranges", "bytes");
+	        headers.set("Connection", "keep-alive");
+	        headers.set("Content-Length", String.valueOf(outputFile.getLength()));
+	        headers.set("Content-Disposition", "inline; "+"filename="+outputFile.getFilename());
+	        headers.set("ETag", outputFile.getMD5());
 	        return new ResponseEntity<byte[]>(outputStream.toByteArray(), headers, HttpStatus.OK);
 		} catch (IOException e) {
 			e.printStackTrace();
-		} catch (IllegalArgumentException e) {
-			
-			System.out.println("This Person Doesn't Have a CV");
+		} catch (NoSuchElementException e) {
+			String error = "This Person Doesn't Have a CV";
+			headers.set("Content-Type",MediaType.TEXT_PLAIN.toString());
+			outputStream.write(error.getBytes());
+			return new ResponseEntity<byte[]>(outputStream.toByteArray(), headers, HttpStatus.OK);
 		}
 	return new ResponseEntity<byte[]>(outputStream.toByteArray(), headers, HttpStatus.OK);
 	}
@@ -151,13 +164,18 @@ public class PersonController {
 	  }
 	
 	@RequestMapping(value="/people",method=RequestMethod.POST)
-	public Person createPerson(@RequestBody Person person) {
+	public Person createPerson(@RequestBody Person person) throws NoSuchAlgorithmException {
 		List<Person> personList = repository.findByEmail(person.getEmail());
 		for(Person p:personList) {
 			if(person.getEmail().equalsIgnoreCase(p.getEmail())) {
 				throw new ResourceNotFoundException("Duplicate email", "Duplicate email", p);
 			}
 		}
+		
+		// Comment this out if front end encryption is enabled
+		MessageDigest md5 = MessageDigest.getInstance("MD5");
+		person.setPassword(HexUtils.toHexString(md5.digest(person.getPassword().getBytes())));
+		
 		repository.save(person);
 		return person;
 	}
@@ -179,9 +197,9 @@ public class PersonController {
 		return repository.save(repository.findById(id).get().setState(state));
 	}
 	
-	@RequestMapping(value="/people/{search}",method=RequestMethod.POST)
-	public List<Person> search(@PathVariable("search") String search) {
-		List<Person> peopleEmail = repository.findAll().stream().filter(p -> {
+	@RequestMapping(value="/find",method=RequestMethod.GET)
+	public List<Person> search(@RequestParam(value="search") String search) {
+		List<Person> people = repository.findAll().stream().filter(p -> {
 			if(p.getEmail().contains(search))
 			{
 				return true;
@@ -192,20 +210,19 @@ public class PersonController {
 			}
 			return false;
 			}).collect(Collectors.toList());
-		return peopleEmail;
+		return people;
 	}
 	
 	
 	@RequestMapping(value="/login",method=RequestMethod.POST)
 	public Person checkLogin(@RequestBody Person user) {
 		List<Person> p = repository.findByEmail(user.getEmail());
-		
 		for (Person o : p) {
 			if (o.getPassword().equals(user.getPassword())) {
 				Person person = new Person(o.getId(), o.getRole());
 				return person;
 			}
 		}
-		return null;
+		return new Person();
 	}	
 }
