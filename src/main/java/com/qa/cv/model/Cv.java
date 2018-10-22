@@ -13,10 +13,21 @@ public class Cv {
 	@Id
 	private String id;
 
-	private String files_id;
+	private String cvid;
+
+	private String state;
+	
+	public String getState() {
+		return state;
+	}
+
+	public Cv setState(String status) {
+		state = status;
+		return this;
+	}
 	
 	public String getFiles_id() {
-		return files_id;
+		return cvid;
 	}
 	
 	public Cv() {
@@ -25,7 +36,8 @@ public class Cv {
 	
 	public Cv(String files_id) {
 		super();
-		this.files_id = files_id;
+		this.cvid = files_id;
+		state = "";
 	}
 	
 	public String getId() {
