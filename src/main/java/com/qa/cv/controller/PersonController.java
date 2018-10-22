@@ -190,13 +190,11 @@ public class PersonController {
 	
 	@RequestMapping(value = "/{id}/cvs", method = RequestMethod.GET)
 	  public List<Cv> findAllCVs(@PathVariable("id") String id) {
-		
 		try {
 			return repository.findById(id).get().getCvs();
 		} catch (NoSuchElementException e) {
+			return new ArrayList<Cv>();
 		}
-	    
-	    return new ArrayList<Cv>();
 	}
 	
 	@RequestMapping(value="/people/{id}",method=RequestMethod.DELETE)
