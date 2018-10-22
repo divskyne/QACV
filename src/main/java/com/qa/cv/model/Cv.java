@@ -1,6 +1,7 @@
 package com.qa.cv.model;
 
 import java.io.File;
+import java.util.Date;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -16,6 +17,25 @@ public class Cv {
 	private String cvid;
 
 	private String state;
+	private String name;
+	private Date modifiedDate;
+	
+	
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public Date getModifiedDate() {
+		return modifiedDate;
+	}
+
+	public void setModifiedDate(Date modifiedDate) {
+		this.modifiedDate = modifiedDate;
+	}
 	
 	public String getState() {
 		return state;
@@ -34,10 +54,12 @@ public class Cv {
 		
 	}
 	
-	public Cv(String files_id) {
+	public Cv(String files_id, String name, Date date) {
 		super();
 		this.cvid = files_id;
 		state = "";
+		this.name = name;
+		this.modifiedDate = date;
 	}
 	
 	public String getId() {

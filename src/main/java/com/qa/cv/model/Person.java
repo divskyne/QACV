@@ -16,7 +16,6 @@ public class Person {
 	private String role;
 	private String password;
 	private List<Cv> cvs;
-	private Cv cv;
     private String docType;
     private Binary file;
 	
@@ -38,7 +37,6 @@ public class Person {
 		this.name = name;
 		this.role = role;
 		this.password = password;
-		this.cv = new Cv();
 		cvs = new ArrayList<Cv>();
 	}
 
@@ -72,24 +70,17 @@ public class Person {
 	public void setPassword(String password) {
 		this.password = password;
 	}
-	public Cv getCv() {
-		return cv;
-		//return HexUtils.toHexString(cv.getFile().getData());
-	}
 	
 	public List<Cv> getCvs() {
 		return cvs;
-		//return HexUtils.toHexString(cv.getFile().getData());
 	}
 	
 	public Person replaceCV(String s, String state) {
-		//cvs.remove(cvs.stream().filter(c -> c.getFiles_id().equals(s)).findFirst().get());
 		cvs.stream().filter(c -> c.getFiles_id().equals(s)).findFirst().get().setState(state);
 		return this;
 	}
 	
 	public Person setCv(Cv string) {
-		this.cv = string;
 		cvs.add(string);
 		return this;
 	}
