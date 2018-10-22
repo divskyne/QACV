@@ -140,6 +140,53 @@ public class PersonController {
 		return findFileFromDB(id);
 	}
 	
+	@GetMapping("/{id}/cv/{cvid}")
+	public ResponseEntity<byte[]> findCV(@PathVariable String id, @PathVariable String cvid) throws IOException
+	{
+		return findFile(id, cvid);
+	}
+	
+	public ResponseEntity<byte[]> findFile(String id, String cvid) throws IOException {
+		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+		HttpHeaders headers = new HttpHeaders();
+		GridFSDBFile outputFile = null;
+		try {
+				String cvFile = cvid;
+				ObjectId objectid = new ObjectId(cvFile);
+				MongoClient mongo = new MongoClient("localhost", 27017);
+				DB db = mongo.getDB("disco1");
+			    GridFS gridFs = new GridFS(db);
+			    outputFile = gridFs.find(objectid);
+			    
+				InputStream inputImage = outputFile.getInputStream();
+		        byte[] buffer = new byte[512];
+		        int l = inputImage.read(buffer);
+		        while(l >= 0) {
+		            outputStream.write(buffer, 0, l);
+		            l = inputImage.read(buffer);
+		        }
+		        for (Object b : outputStream.toByteArray()) {
+					b.toString();
+				}
+	        mongo.close();
+	        headers.set("Content-Type", outputFile.getContentType());
+	        headers.set("Accept-Ranges", "bytes");
+	        headers.set("Connection", "keep-alive");
+	        headers.set("Content-Length", String.valueOf(outputFile.getLength()));
+	        headers.set("Content-Disposition", "inline; "+"filename="+outputFile.getFilename());
+	        headers.set("ETag", outputFile.getMD5());
+	        return new ResponseEntity<byte[]>(outputStream.toByteArray(), headers, HttpStatus.OK);
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (Exception e) {
+			String error = "This Person Doesn't Have a CV";
+			headers.set("Content-Type",MediaType.TEXT_PLAIN.toString());
+			outputStream.write(error.getBytes());
+			return new ResponseEntity<byte[]>(outputStream.toByteArray(), headers, HttpStatus.OK);
+		}
+		return new ResponseEntity<byte[]>(outputStream.toByteArray(), headers, HttpStatus.OK);
+	}
+	
 	@PostMapping("/{id}/upload")
 	public String singleFileUpload(@PathVariable String id, @RequestParam("file") MultipartFile multipart) {
 		return saveFileToDB(multipart, id);
@@ -186,15 +233,48 @@ public class PersonController {
 	    
 	}
 	
+	@RequestMapping(value = "/{id}/cvs", method = RequestMethod.GET)
+	  public List<Cv> findAllCVs(@PathVariable("id") String id) {
+		
+		try {
+			return repository.findById(id).get().getCvs();
+		} catch (NoSuchElementException e) {
+			
+		}
+	    
+	    return null;
+	}
+	
 	@RequestMapping(value="/people/{id}",method=RequestMethod.DELETE)
 	public Person deletePerson(@PathVariable String id, Person person) {
 		repository.delete(person);
 		return person;
 	}
 	
-	@RequestMapping(value="/people/{id}/n",method=RequestMethod.POST)
-	public Person updateState(@PathVariable("id") String id, @RequestBody String state) {
-		return repository.save(repository.findById(id).get().setState(state));
+	@RequestMapping(value="/people/{id}/state/{cvid}",method=RequestMethod.GET)
+	public String getState(@PathVariable("id") String id, @PathVariable("cvid") String cvid) {
+		return repository.findById(id).get().getCvs().stream().filter(c -> c.getFiles_id().equals(cvid)).findFirst().get().getState();
+	}
+	
+	@RequestMapping(value="/people/{id}/state/{cvid}",method=RequestMethod.POST)
+	public Person updateState(@PathVariable("id") String id,  @PathVariable("cvid") String cvid,  @RequestBody String state) {
+		
+		//repository.findById(id).get().getCvs().stream().filter(c -> c.getFiles_id().equals(cvid)).findFirst().get().setState(state);
+		
+		System.out.println(cvrepository.findByCvid(cvid).getFiles_id());
+		
+		cvrepository.save(cvrepository.findByCvid(cvid).setState(state));
+		
+		System.out.println(cvrepository.findByCvid(cvid).getState());
+		//repository.findById(id).get().getCvs().remove(repository.findById(id).get().getCvs().stream().filter(c -> c.getFiles_id().equals(cvid)).findFirst().get());
+		
+		System.out.println(repository.findById(id).get().getCvs().removeIf(c -> c.getFiles_id().equals(cvid)));
+		
+		repository.save(repository.findById(id).get().replaceCV(cvid, state));
+		
+		//repository.findById(id).get().getCvs().add(cvrepository.findByCvid(cvid).setState(state));
+		//repository.save(repository.findById(id).get().setCv(cvrepository.findByCvid(cvid).setState(state)));
+		return repository.findById(id).get();
 	}
 	
 	@RequestMapping(value="/find",method=RequestMethod.GET)

@@ -1,5 +1,6 @@
 package com.qa.cv.repo;
 
+import java.awt.List;
 import java.util.Optional;
 
 import org.springframework.data.mongodb.repository.MongoRepository;
@@ -10,5 +11,5 @@ import com.qa.cv.model.Cv;
 
 @RepositoryRestResource(collectionResourceRel = "cv", path = "cv")
 public interface CVRepository extends MongoRepository<Cv, String> {
-	//Optional<Cv> findByfiles_id(@Param("files_id") String files_id);
+	Cv findByCvid(@Param("files_id") String files_id);
 }
