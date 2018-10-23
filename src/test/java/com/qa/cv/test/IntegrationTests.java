@@ -14,6 +14,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.List;
 
 import org.bson.types.Binary;
 
@@ -123,12 +124,12 @@ public class IntegrationTests {
 	}
 	
 	//Get person from database by ID
-	@Test @Ignore
+	@Test
 	public void getPersonFromDatabase() throws Exception {
 		
-		ReportFile.createTest("Test: Retrieve person from database by ID");
+		ReportFile.createTest("Test: Retrieve person from database");
 		
-		Person person = new Person("benderbrodriguez@planetexpress.com", "Bender", "Bending Unit", "001010110");
+		Person person = new Person("benderbrodriguez@planetexpress.com", "Bender", "Trainer", "001010110");
 		personRepo.save(person);
 		String id = person.getId();	
 		ReportFile.logStatusTest(LogStatus.INFO, "Test entity created and added to database");
@@ -152,14 +153,14 @@ public class IntegrationTests {
 		}
 		else ReportFile.logStatusTest(LogStatus.FAIL, "Incorrect content type returned");
 		
-		if(result.getResponse().getContentAsString().contains(person.toString())) {			
+		if(result.getResponse().getContentAsString().contains(person.toStringNoPassword().substring(1, person.toStringNoPassword().length()-1))) {			
 			ReportFile.logStatusTest(LogStatus.PASS, "Expected content found in response body");
 		}
 		else ReportFile.logStatusTest(LogStatus.FAIL, "Incorrect content found in response body");
 	}
 	
 	//Get all people from database
-	@Test @Ignore
+	@Test
 	public void getAllPeopleFromDatabase() throws Exception {
 		
 		ReportFile.createTest("Test: Retrieve all persons from database");
@@ -180,8 +181,6 @@ public class IntegrationTests {
 							  .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
 							  .andReturn();
 		
-		ReportFile.logStatusTest(LogStatus.INFO, "HTTP status code " + result.getResponse().getStatus() + " returned");
-
 		if(result.getResponse().getStatus() == 200) {			
 			ReportFile.logStatusTest(LogStatus.PASS, "HTTP status code " + result.getResponse().getStatus() + " returned");
 		}
@@ -192,17 +191,18 @@ public class IntegrationTests {
 		}
 		else ReportFile.logStatusTest(LogStatus.FAIL, "Incorrect content type returned");
 		
-		if(result.getResponse().getContentAsString().contains(person1.toString()) && result.getResponse().getContentAsString().contains(person2.toString())) {			
+		if(result.getResponse().getContentAsString().contains(person1.toStringNoPassword().substring(1, person1.toStringNoPassword().length()-1)) 
+		&& result.getResponse().getContentAsString().contains(person2.toStringNoPassword().substring(1, person2.toStringNoPassword().length()-1))) {			
 			ReportFile.logStatusTest(LogStatus.PASS, "Expected content found in response body");
 		}
 		else ReportFile.logStatusTest(LogStatus.FAIL, "Incorrect content found in response body");
 	}
 	
 	//Update person in database by ID
-	@Test @Ignore
+	@Test
 	public void editOwnerInDatabase() throws Exception {
 		
-		ReportFile.createTest("Test: Update person in database by ID");
+		ReportFile.createTest("Test: Update person in database");
 		
 		Person person = new Person("supergeniusrick@universec137.com", "Rick", "Training Manager", "wubbalubbadubdub");
 		personRepo.save(person);	
@@ -210,7 +210,7 @@ public class IntegrationTests {
 		ReportFile.logStatusTest(LogStatus.INFO, "Test entity created and added to database");
 		
 		person.setPassword("Rikkitikkitaki");
-		ReportFile.logStatusTest(LogStatus.INFO, "Test entity password updated");
+		ReportFile.logStatusTest(LogStatus.INFO, "Test entity password changed");
 		
 		ReportFile.logStatusTest(LogStatus.INFO, "Put request sent");
 		
@@ -233,13 +233,13 @@ public class IntegrationTests {
 		else ReportFile.logStatusTest(LogStatus.FAIL, "Incorrect content type returned");
 		
 		if(result.getResponse().getContentAsString().contains("\"password\":\"Rikkitikkitaki\"")) {			
-			ReportFile.logStatusTest(LogStatus.PASS, "Correct password found in response body");
+			ReportFile.logStatusTest(LogStatus.PASS, "Expected password found in response body");
 		}
 		else ReportFile.logStatusTest(LogStatus.FAIL, "Incorrect password found in response body");
 	}
 	
 	//Delete person from database by ID
-	@Test @Ignore
+	@Test
 	public void deletePersonFromDatabase() throws Exception {
 		
 		ReportFile.createTest("Test: Delete person from database by ID");
@@ -262,53 +262,55 @@ public class IntegrationTests {
 		else ReportFile.logStatusTest(LogStatus.FAIL, "HTTP status code " + result.getResponse().getStatus() + " returned");
 		
 		if(personRepo.findByEmail("stansmith@cia.com").isEmpty()) {			
-			ReportFile.logStatusTest(LogStatus.PASS, "Test entity not found in database");
+			ReportFile.logStatusTest(LogStatus.PASS, "Test entity deleted from database");
 		}
-		else ReportFile.logStatusTest(LogStatus.FAIL, "Test entity found in database");
+		else ReportFile.logStatusTest(LogStatus.FAIL, "Test entity not deleted from database");
 	}
 	
 	//Search for person in database
-	@Test @Ignore
+	@Test
 	public void search() throws Exception {
 		
-		ReportFile.createTest("Integration Test: Search for trainee");
+		ReportFile.createTest("Test: Search for trainee");
 		
-		Person person = new Person("zappbrannigan@theinfosphere.com", "Zapp", "Training Manager", "Shampagon");
+		Person person = new Person("zappbrannigan@theinfosphere.com", "Zapp", "Training Manager", "Champagan");
 		personRepo.save(person);
+		ReportFile.logStatusTest(LogStatus.INFO, "Test entity created and added to database");
 		
-		MvcResult result = mvc.perform(get("/api/find")
+		ReportFile.logStatusTest(LogStatus.INFO, "Get request sent");
+		MvcResult result = mvc.perform(get("/api/find?search=")
 							  .contentType(MediaType.APPLICATION_JSON)
-							  .content("Zap"))
+							  .content("zap"))
 							  .andExpect(status().isOk())
 							  .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
 							  .andReturn();
 		
-		ReportFile.logStatusTest(LogStatus.INFO, "HTTP status code " + result.getResponse().getStatus() + " returned");
-
-		if(result.getResponse().getStatus() == 200 && result.getResponse().getContentAsString().contains("Zap")) {			
-			ReportFile.logStatusTest(LogStatus.PASS, "Correct HTTP status code returned and expected content found in response body");
+		if(result.getResponse().getStatus() == 200) {			
+			ReportFile.logStatusTest(LogStatus.PASS, "HTTP status code " + result.getResponse().getStatus() + " returned");
 		}
-		else if (result.getResponse().getStatus() != 200 && !result.getResponse().getContentAsString().contains("Zap")) {
-			ReportFile.logStatusTest(LogStatus.FAIL, "Incorrect HTTP status code returned and expected content not found in response body");
+		else ReportFile.logStatusTest(LogStatus.FAIL, "HTTP status code " + result.getResponse().getStatus() + " returned");
+		
+		if(result.getResponse().getContentType().contains("json")) {			
+			ReportFile.logStatusTest(LogStatus.PASS, "Content returned as JSON object");
 		}
-		else if (!result.getResponse().getContentAsString().contains("Zap")) {
-			ReportFile.logStatusTest(LogStatus.FAIL, "Correct HTTP status code returned but expected content not found in response body");
+		else ReportFile.logStatusTest(LogStatus.FAIL, "Incorrect content type returned");
+		
+		if(result.getResponse().getContentAsString().contains("\"name\":\"Zapp\"")) {			
+			ReportFile.logStatusTest(LogStatus.PASS, "Expected content found in response body");
 		}
-		else {
-			ReportFile.logStatusTest(LogStatus.FAIL, "Person not successfully retrieved by search");
-		}
+		else ReportFile.logStatusTest(LogStatus.FAIL, "Incorrect content found in response body");
 	}
 	
 	//Login
-	@Test @Ignore
+	@Test
 	public void login() throws Exception {
 		
-		ReportFile.createTest("Integratoin Test: Login");
+		ReportFile.createTest("Test: Login");
 		
 		Person person = new Person("pgriffin@happygoluckytoyfactory", "Peter", "Trainee", "Nyahhhh");
 		personRepo.save(person);
 		
-		ReportFile.logStatusTest(LogStatus.INFO, "Test entity created and saved to the database");
+		ReportFile.logStatusTest(LogStatus.INFO, "Test entity created and added to database");
 
 		ReportFile.logStatusTest(LogStatus.INFO, "Post request sent");
 		MvcResult result = mvc.perform(post("/api/login")
@@ -317,90 +319,103 @@ public class IntegrationTests {
 							  .andExpect(status().isOk())
 							  .andReturn();
 		
-		if(result.getResponse().getStatus() == 200 && result.getResponse().getContentAsString().contains("\"name\":\"Peter\"")) {			
-			ReportFile.logStatusTest(LogStatus.PASS, "Correct HTTP status code returned and expected content found in response body");
+		if(result.getResponse().getStatus() == 200) {			
+			ReportFile.logStatusTest(LogStatus.PASS, "HTTP status code " + result.getResponse().getStatus() + " returned");
 		}
-		else if (result.getResponse().getStatus() != 200 && !result.getResponse().getContentAsString().contains("\"name\":\"Peter\"")) {
-			ReportFile.logStatusTest(LogStatus.FAIL, "Incorrect HTTP status code returned and expected content not found in response body");
-		}
-		else if (!result.getResponse().getContentAsString().contains("\"name\":\"Rick\"")) {
-			ReportFile.logStatusTest(LogStatus.FAIL, "Correct HTTP status code returned but expected content not found in response body");
-		}
-		else {
-			ReportFile.logStatusTest(LogStatus.FAIL, "Login successful");
-		}
+		else ReportFile.logStatusTest(LogStatus.FAIL, "HTTP status code " + result.getResponse().getStatus() + " returned");
 	}
-
+	
 	//Add CV to Database
-	@Test @Ignore
+	@Test
 	public void addCVToDatabase() throws Exception {
 		
-		ReportFile.createTest("Integration Test: Add CV to database");
+		ReportFile.createTest("Test: Add CV to database");
 		
-		Person person = new Person("stansmith@cia.com", "Stan", "Trainer", "bush4life");
-		personRepo.save(person);	
+		Person person = new Person("pgriffin@happygoluckytoyfactory", "Peter", "Trainee", "Nyahhhh");
+		personRepo.save(person);
+		
+		ReportFile.logStatusTest(LogStatus.INFO, "Test entity person created and added to database");
+		
 		String id = person.getId();
 
-		CloseableHttpClient httpClient = HttpClients.createDefault();
 		MultipartEntityBuilder builder = MultipartEntityBuilder.create();
 		builder.addTextBody("field1", "yes", ContentType.TEXT_PLAIN);
 		
-		File f = new File("Installing node.docx");
+		File f = new File("TestPlan.docx");
 		builder.addBinaryBody(
 		    "file",
 		    new FileInputStream(f),
 		    ContentType.APPLICATION_OCTET_STREAM,
 		    f.getName()
 		);
-		ReportFile.logStatusTest(LogStatus.INFO, "Test entity attached to post request");
+		ReportFile.logStatusTest(LogStatus.INFO, "Test entity CV attached to post request");
 
 		HttpPost uploadFile = new HttpPost("http://localhost:8090/api/" + id + "/upload");
 		HttpEntity multipart = builder.build();
 		uploadFile.setEntity(multipart);
+		
+		ReportFile.logStatusTest(LogStatus.INFO, "Post request sent");
+		CloseableHttpClient httpClient = HttpClients.createDefault();
 		CloseableHttpResponse response = httpClient.execute(uploadFile);
 		
-		assertEquals(response.getStatusLine().getStatusCode(), 200);
+		assertEquals(200, response.getStatusLine().getStatusCode());
+		
+		if(response.getStatusLine().getStatusCode() == 200) {			
+			ReportFile.logStatusTest(LogStatus.PASS, "HTTP status code " + response.getStatusLine().getStatusCode() + " returned");
+		}
+		else ReportFile.logStatusTest(LogStatus.FAIL, "HTTP status code " + response.getStatusLine().getStatusCode() + " returned");
 	}
 
 	//Get CV from database by ID
-	@Test @Ignore
+	@Test
 	public void getCVFromDatabase() throws Exception {
 				
-		ReportFile.createTest("Integration Test: Get CV from database");
+		ReportFile.createTest("Test: Get CV from database");
 
 		Person person = new Person("stansmith@cia.com", "Stan", "Trainer", "bush4life");
-		personRepo.save(person);	
+		personRepo.save(person);
 		String id = person.getId();
-		
+		ReportFile.logStatusTest(LogStatus.INFO, "Test entity person created and added to database");
+
 		MultipartEntityBuilder builder = MultipartEntityBuilder.create();
 		builder.addTextBody("field1", "yes", ContentType.TEXT_PLAIN);
 		
-		File f = new File("Installing node.docx");
+		
+		File f = new File("TestPlan.docx");
 		builder.addBinaryBody(
 		    "file",
 		    new FileInputStream(f),
 		    ContentType.APPLICATION_OCTET_STREAM,
 		    f.getName()
 		);
-		ReportFile.logStatusTest(LogStatus.INFO, "Test entity attached to post request");
+		ReportFile.logStatusTest(LogStatus.INFO, "Test entity CV attached to post request");
 
 		CloseableHttpClient httpClient = HttpClients.createDefault();
 		HttpPost uploadFile = new HttpPost("http://localhost:8090/api/" + id + "/upload");
 		HttpEntity multipart = builder.build();
 		uploadFile.setEntity(multipart);
 		httpClient.execute(uploadFile);
+		ReportFile.logStatusTest(LogStatus.INFO, "Test entity CV and added to database");
 		
-		HttpGet getFile = new HttpGet("http://localhost:8090/api/" + id + "/cv");
+		ReportFile.logStatusTest(LogStatus.INFO, "Get request sent");
+		HttpGet getFile = new HttpGet("http://localhost:8090/api/" + id + "/cv/" + "test");
 		CloseableHttpResponse response = httpClient.execute(getFile);
 		
-		assertEquals(response.getStatusLine().getStatusCode(), 200);
+		assertEquals(200, response.getStatusLine().getStatusCode());
+		
+		if(response.getStatusLine().getStatusCode() == 200) {			
+			ReportFile.logStatusTest(LogStatus.PASS, "HTTP status code " + response.getStatusLine().getStatusCode() + " returned");
+		}
+		else ReportFile.logStatusTest(LogStatus.FAIL, "HTTP status code " + response.getStatusLine().getStatusCode() + " returned");
 	}
 	
-	//Update CV in database
+	//Get all CVs
 	
 	//Delete CV from database
 	
-	//Update state of CV in database by personID
+	//Get state of CV
+	
+	//Update state of CV
 //	@Test @Ignore
 //	public void updateStatus() throws Exception {
 //		
