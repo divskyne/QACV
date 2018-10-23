@@ -36,6 +36,7 @@ import com.mongodb.MongoClient;
 import com.mongodb.gridfs.GridFS;
 import com.mongodb.gridfs.GridFSDBFile;
 import com.mongodb.gridfs.GridFSInputFile;
+import com.qa.cv.exception.PageNotFound;
 import com.qa.cv.exception.ResourceNotFoundException;
 import com.qa.cv.model.Cv;
 import com.qa.cv.model.Person;
@@ -144,7 +145,10 @@ public class PersonController {
 	
 	@PostMapping("/{id}/upload")
 	public String singleFileUpload(@PathVariable String id, @RequestParam("file") MultipartFile multipart) {
-		return saveFileToDB(multipart, id);
+		if (!(repository.findById(id).get().getCvs().size()>2)) {
+			return saveFileToDB(multipart, id);
+		}
+		return "You can't upload any more CV's";
 	}
 	@RequestMapping(value = "/people", method = RequestMethod.GET)
 	public List<Person> getPeople() {
@@ -175,8 +179,8 @@ public class PersonController {
 		}
 		
 		// Comment this out if front end encryption is enabled
-		MessageDigest md5 = MessageDigest.getInstance("MD5");
-		person.setPassword(HexUtils.toHexString(md5.digest(person.getPassword().getBytes())));
+/*		MessageDigest md5 = MessageDigest.getInstance("MD5");
+		person.setPassword(HexUtils.toHexString(md5.digest(person.getPassword().getBytes())));*/
 		
 		repository.save(person);
 		return person;
@@ -184,19 +188,20 @@ public class PersonController {
 	
 	@RequestMapping(value = "/people/{id}", method = RequestMethod.GET)
 	  public Optional<Person> getPersonById(@PathVariable("id") String id) {
-	    return(repository.findById(id));
-	    
+		try {
+			return repository.findById(id);
+		} catch (Exception e) {
+			throw new PageNotFound("/people/"+id);
+		} 
 	}
 	
 	@RequestMapping(value = "/{id}/cvs", method = RequestMethod.GET)
 	  public List<Cv> findAllCVs(@PathVariable("id") String id) {
-		
 		try {
 			return repository.findById(id).get().getCvs();
 		} catch (NoSuchElementException e) {
+			throw new PageNotFound(id+"/cvs");
 		}
-	    
-	    return new ArrayList<Cv>();
 	}
 	
 	@RequestMapping(value="/people/{id}",method=RequestMethod.DELETE)
@@ -218,7 +223,7 @@ public class PersonController {
 	public Person updateState(@PathVariable("id") String id,  @PathVariable("cvid") String cvid,  @RequestBody String state) {
 		cvrepository.save(cvrepository.findByCvid(cvid).setState(state));
 		repository.findById(id).get().getCvs().removeIf(c -> c.getFiles_id().equals(cvid));
-		repository.save(repository.findById(id).get().replaceCV(cvid, state));
+		repository.save(repository.findById(id).get().changeCVState(cvid, state));
 		return repository.findById(id).get();
 	}
 	
@@ -236,6 +241,12 @@ public class PersonController {
 			return false;
 			}).collect(Collectors.toList());
 		return people;
+	}
+	
+	@RequestMapping(value="/people/{id}/cv/{cvid}",method=RequestMethod.DELETE)
+	public Person removeCV(@PathVariable("id") String id,  @PathVariable("cvid") String cvid) {
+		repository.save(repository.findById(id).get().removeCV(cvid));
+		return repository.findById(id).get();
 	}
 	
 	
