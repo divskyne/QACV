@@ -103,6 +103,10 @@ public class Person {
 	
 	@Override
 	public String toString() {
-		return "{\"email\": \"" + email + "\", \"name\": \"" + name + "\", \"role\": \"" + role + "\", \"password\": \"" + password + "\"}";
+		return "{\"email\":\"" + email + "\",\"name\":\"" + name + "\",\"role\":\"" + role + "\",\"password\":\"" + password + "\"}";
+	}
+	
+	public String toStringNoPassword() {
+		return "{\"email\":\"" + email + "\",\"name\":\"" + name + "\",\"role\":\"" + role + "\"}";
 	}
 }

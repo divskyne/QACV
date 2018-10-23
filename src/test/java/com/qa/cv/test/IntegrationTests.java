@@ -93,7 +93,7 @@ public class IntegrationTests {
 		
 		ReportFile.createTest("Test: Add person to database");
 		
-		Person person = new Person("hsimpson2@springfieldnuclearpowerplant.com", "Homer", "Trainee", "Donut");		
+		Person person = new Person("hsimpson@springfieldnuclearpowerplant.com", "Homer", "Trainee", "Donut");		
 		ReportFile.logStatusTest(LogStatus.INFO, "Test entity created");
 	
 		ReportFile.logStatusTest(LogStatus.INFO, "Post request sent");
@@ -116,7 +116,7 @@ public class IntegrationTests {
 		}
 		else ReportFile.logStatusTest(LogStatus.FAIL, "Incorrect content type returned");
 		
-		if(result.getResponse().getContentAsString().contains(person.toString())) {			
+		if(result.getResponse().getContentAsString().contains(person.toStringNoPassword().substring(1, person.toStringNoPassword().length()-1))) {			
 			ReportFile.logStatusTest(LogStatus.PASS, "Expected content found in response body");
 		}
 		else ReportFile.logStatusTest(LogStatus.FAIL, "Incorrect content found in response body");
