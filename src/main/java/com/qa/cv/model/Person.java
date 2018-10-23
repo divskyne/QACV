@@ -105,5 +105,10 @@ public class Person {
 
 	public void setFile(Binary file) {
 		this.file = file;
-	}	
+	}
+	
+	@Override
+	public String toString() {
+		return "{\"email\": \"" + email + "\", \"name\": \"" + name + "\", \"role\": \"" + role + "\", \"password\": \"" + password + "\"}";
+	}
 }
