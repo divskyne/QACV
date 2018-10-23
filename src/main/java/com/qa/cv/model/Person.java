@@ -103,7 +103,7 @@ public class Person {
 	public String getCurrentTrainer() {
 		return currentTrainer;
 	}
-
+	
 	public void setCurrentTrainer(String currentTrainer) {
 		this.currentTrainer = currentTrainer;
 	}
@@ -114,5 +114,13 @@ public class Person {
 
 	public void setPreferedRole(String preferedRole) {
 		this.preferedRole = preferedRole;
+	}
+	@Override
+	public String toString() {
+		return "{\"email\":\"" + email + "\",\"name\":\"" + name + "\",\"role\":\"" + role + "\",\"password\":\"" + password + "\"}";
+	}
+	
+	public String toStringNoPassword() {
+		return "{\"email\":\"" + email + "\",\"name\":\"" + name + "\",\"role\":\"" + role + "\"}";
 	}
 }
