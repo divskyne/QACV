@@ -411,7 +411,7 @@ public class IntegrationTests {
 	
 	//Get all CVs
 	
-	//Delete CV from database
+	//Delete CV
 	
 	//Get state of CV
 	
