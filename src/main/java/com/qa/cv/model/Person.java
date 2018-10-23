@@ -75,7 +75,13 @@ public class Person {
 		return cvs;
 	}
 	
-	public Person replaceCV(String s, String state) {
+	public Person removeCV(String s)
+	{
+		cvs.remove(cvs.stream().filter(c -> c.getFiles_id().equals(s)).findFirst().get());
+		return this;
+	}
+	
+	public Person changeCVState(String s, String state) {
 		cvs.stream().filter(c -> c.getFiles_id().equals(s)).findFirst().get().setState(state);
 		return this;
 	}
