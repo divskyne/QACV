@@ -57,7 +57,7 @@ public class Cv {
 	public Cv(String files_id, String name, Date date) {
 		super();
 		this.cvid = files_id;
-		state = "";
+		state = "Unapproved";
 		this.name = name;
 		this.modifiedDate = date;
 	}

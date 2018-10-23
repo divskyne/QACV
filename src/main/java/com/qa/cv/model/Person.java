@@ -16,8 +16,9 @@ public class Person {
 	private String role;
 	private String password;
 	private List<Cv> cvs;
-    private String docType;
-    private Binary file;
+	private String preferedLocation;
+	private String currentTrainer;
+	private String preferedRole;
 	
 	public Person()
 	{
@@ -91,19 +92,27 @@ public class Person {
 		return this;
 	}
 
-	public String getDocType() {
-		return docType;
+	public String getPreferedLocation() {
+		return preferedLocation;
 	}
 
-	public void setDocType(String docType) {
-		this.docType = docType;
+	public void setPreferedLocation(String preferedLocation) {
+		this.preferedLocation = preferedLocation;
 	}
 
-	public Binary getFile() {
-		return file;
+	public String getCurrentTrainer() {
+		return currentTrainer;
 	}
 
-	public void setFile(Binary file) {
-		this.file = file;
-	}	
+	public void setCurrentTrainer(String currentTrainer) {
+		this.currentTrainer = currentTrainer;
+	}
+
+	public String getPreferedRole() {
+		return preferedRole;
+	}
+
+	public void setPreferedRole(String preferedRole) {
+		this.preferedRole = preferedRole;
+	}
 }

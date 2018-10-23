@@ -56,6 +56,9 @@ public class PersonController {
 	@Autowired
 	private CVRepository cvrepository;
 	
+	String unApproved = "Unapproved";
+	String approved = "Approved";
+	
 	private String saveFileToDB(MultipartFile multipart, String id) {
 		
 		if (!multipart.getContentType().equals(WORD))
@@ -204,30 +207,42 @@ public class PersonController {
 		}
 	}
 	
-	@RequestMapping(value="/people/{id}",method=RequestMethod.DELETE)
+	@RequestMapping(value="/people/{id}", method=RequestMethod.DELETE)
 	public Person deletePerson(@PathVariable String id, Person person) {
 		repository.delete(person);
 		return person;
 	}
 	
-	@RequestMapping(value="/people/{id}/state/{cvid}",method=RequestMethod.GET)
+	@RequestMapping(value="/people/{id}/state/{cvid}/find", method=RequestMethod.GET)
 	public String getState(@PathVariable("id") String id, @PathVariable("cvid") String cvid) {
 		try {
 			return repository.findById(id).get().getCvs().stream().filter(c -> c.getFiles_id().equals(cvid)).findFirst().get().getState();
 		} catch (Exception e) {
-			return "Either this person Doesn't Ecist or This CV doesn't exist";
+			return "Either this person Doesn't Exist or This CV doesn't exist";
 		}
 	}
 	
-	@RequestMapping(value="/people/{id}/state/{cvid}",method=RequestMethod.POST)
-	public Person updateState(@PathVariable("id") String id,  @PathVariable("cvid") String cvid,  @RequestBody String state) {
+	@RequestMapping(value="/people/{id}/state/{cvid}", method=RequestMethod.GET)
+	public Person updateState(@PathVariable("id") String id,  @PathVariable("cvid") String cvid) {
+		
+		String state = null;
+		String currentState = repository.findById(id).get().getCvs().stream().filter(c -> c.getFiles_id().equals(cvid)).findFirst().get().getState();
+		
+		if (currentState.equals(unApproved)) {
+			state = approved; 
+		}
+		else if (currentState.equals(approved))
+		{
+			state = unApproved; 
+		}
+		
 		cvrepository.save(cvrepository.findByCvid(cvid).setState(state));
 		repository.findById(id).get().getCvs().removeIf(c -> c.getFiles_id().equals(cvid));
 		repository.save(repository.findById(id).get().changeCVState(cvid, state));
 		return repository.findById(id).get();
 	}
 	
-	@RequestMapping(value="/find",method=RequestMethod.GET)
+	@RequestMapping(value="/find", method=RequestMethod.GET)
 	public List<Person> search(@RequestParam(value="search") String search) {
 		List<Person> people = repository.findAll().stream().filter(p -> {
 			if(p.getEmail().contains(search))
@@ -243,22 +258,24 @@ public class PersonController {
 		return people;
 	}
 	
-	@RequestMapping(value="/people/{id}/cv/{cvid}",method=RequestMethod.DELETE)
+	@RequestMapping(value="/people/{id}/cv/{cvid}", method=RequestMethod.DELETE)
 	public Person removeCV(@PathVariable("id") String id,  @PathVariable("cvid") String cvid) {
 		repository.save(repository.findById(id).get().removeCV(cvid));
 		return repository.findById(id).get();
 	}
 	
 	
-	@RequestMapping(value="/login",method=RequestMethod.POST)
-	public Person checkLogin(@RequestBody Person user) {
+	@RequestMapping(value="/login", method=RequestMethod.POST)
+	public String checkLogin(@RequestBody Person user) {
 		List<Person> p = repository.findByEmail(user.getEmail());
 		for (Person o : p) {
 			if (o.getPassword().equals(user.getPassword())) {
 				Person person = new Person(o.getId(), o.getRole());
-				return person;
+				return o.getRole();
+				//return person;
 			}
 		}
-		return new Person();
+		return "User Not Found";
+		//return new Person();
 	}	
 }
