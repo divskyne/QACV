@@ -36,6 +36,7 @@ import com.mongodb.MongoClient;
 import com.mongodb.gridfs.GridFS;
 import com.mongodb.gridfs.GridFSDBFile;
 import com.mongodb.gridfs.GridFSInputFile;
+import com.qa.cv.exception.PageNotFound;
 import com.qa.cv.exception.ResourceNotFoundException;
 import com.qa.cv.model.Cv;
 import com.qa.cv.model.Person;
@@ -54,6 +55,9 @@ public class PersonController {
 	
 	@Autowired
 	private CVRepository cvrepository;
+	
+	String flagged = "Flagged";
+	String approved = "Approved";
 	
 	private String saveFileToDB(MultipartFile multipart, String id) {
 		
@@ -144,7 +148,16 @@ public class PersonController {
 	
 	@PostMapping("/{id}/upload")
 	public String singleFileUpload(@PathVariable String id, @RequestParam("file") MultipartFile multipart) {
-		return saveFileToDB(multipart, id);
+		int numberOfCVs;
+		try {
+			numberOfCVs = repository.findById(id).get().getCvs().size();
+		} catch (NoSuchElementException e) {
+			return "Invalid Person";
+		}
+		if (!(numberOfCVs>2)) {
+			return saveFileToDB(multipart, id);
+		}
+		return "You can't upload any more CV's";
 	}
 	@RequestMapping(value = "/people", method = RequestMethod.GET)
 	public List<Person> getPeople() {
@@ -159,10 +172,10 @@ public class PersonController {
 				repository.save(person);
 				return person;
 			} else {
-				throw new ResourceNotFoundException("Can't change email address", "Can't change email address", person);
+				throw new ResourceNotFoundException("Can't change email address");
 			}
 		}
-		throw new ResourceNotFoundException("Can't change email address", "Can't change email address", person);
+		throw new ResourceNotFoundException("Can't change email address");
 	  }
 	
 	@RequestMapping(value="/people",method=RequestMethod.POST)
@@ -170,13 +183,13 @@ public class PersonController {
 		List<Person> personList = repository.findByEmail(person.getEmail());
 		for(Person p:personList) {
 			if(person.getEmail().equalsIgnoreCase(p.getEmail())) {
-				throw new ResourceNotFoundException("Duplicate email", "Duplicate email", p);
+				throw new ResourceNotFoundException("Duplicate email");
 			}
 		}
 		
 		// Comment this out if front end encryption is enabled
-		MessageDigest md5 = MessageDigest.getInstance("MD5");
-		person.setPassword(HexUtils.toHexString(md5.digest(person.getPassword().getBytes())));
+/*		MessageDigest md5 = MessageDigest.getInstance("MD5");
+		person.setPassword(HexUtils.toHexString(md5.digest(person.getPassword().getBytes())));*/
 		
 		repository.save(person);
 		return person;
@@ -184,45 +197,71 @@ public class PersonController {
 	
 	@RequestMapping(value = "/people/{id}", method = RequestMethod.GET)
 	  public Optional<Person> getPersonById(@PathVariable("id") String id) {
-	    return(repository.findById(id));
-	    
+		try {
+			return repository.findById(id);
+		} catch (Exception e) {
+			throw new PageNotFound("/people/"+id);
+		} 
 	}
 	
 	@RequestMapping(value = "/{id}/cvs", method = RequestMethod.GET)
 	  public List<Cv> findAllCVs(@PathVariable("id") String id) {
-		
 		try {
 			return repository.findById(id).get().getCvs();
 		} catch (NoSuchElementException e) {
+			throw new PageNotFound(id+"/cvs");
 		}
-	    
-	    return new ArrayList<Cv>();
 	}
 	
-	@RequestMapping(value="/people/{id}",method=RequestMethod.DELETE)
+	@RequestMapping(value="/people/{id}", method=RequestMethod.DELETE)
 	public Person deletePerson(@PathVariable String id, Person person) {
 		repository.delete(person);
 		return person;
 	}
 	
-	@RequestMapping(value="/people/{id}/state/{cvid}",method=RequestMethod.GET)
+	@RequestMapping(value="/people/{id}/state/{cvid}/find", method=RequestMethod.GET)
 	public String getState(@PathVariable("id") String id, @PathVariable("cvid") String cvid) {
 		try {
 			return repository.findById(id).get().getCvs().stream().filter(c -> c.getFiles_id().equals(cvid)).findFirst().get().getState();
 		} catch (Exception e) {
-			return "Either this person Doesn't Ecist or This CV doesn't exist";
+			return "Either this person Doesn't Exist or This CV doesn't exist";
 		}
 	}
 	
-	@RequestMapping(value="/people/{id}/state/{cvid}",method=RequestMethod.POST)
-	public Person updateState(@PathVariable("id") String id,  @PathVariable("cvid") String cvid,  @RequestBody String state) {
+	@RequestMapping(value="/people/{id}/state/{cvid}", method=RequestMethod.GET)
+	public Person updateState(@PathVariable("id") String id,  @PathVariable("cvid") String cvid) {
+		
+		String state = null;
+		String currentState = null;
+		try {
+			currentState = repository.findById(id).get().getCvs().stream().filter(c -> c.getFiles_id().equals(cvid)).findFirst().get().getState();
+		} catch (NoSuchElementException e) {
+			throw new ResourceNotFoundException("Either the Person or the CV doesn't exist!");
+		}
+		
+		try {
+			if (currentState.equals("Unapproved")) {
+				currentState = flagged;
+			}
+		} catch (NullPointerException e) {
+			throw new ResourceNotFoundException("User or CV not found!");
+		}
+		
+		if (currentState.equals(flagged)) {
+			state = approved; 
+		}
+		else if (currentState.equals(approved))
+		{
+			state = flagged; 
+		}
+		
 		cvrepository.save(cvrepository.findByCvid(cvid).setState(state));
 		repository.findById(id).get().getCvs().removeIf(c -> c.getFiles_id().equals(cvid));
-		repository.save(repository.findById(id).get().replaceCV(cvid, state));
+		repository.save(repository.findById(id).get().changeCVState(cvid, state));
 		return repository.findById(id).get();
 	}
 	
-	@RequestMapping(value="/find",method=RequestMethod.GET)
+	@RequestMapping(value="/find", method=RequestMethod.GET)
 	public List<Person> search(@RequestParam(value="search") String search) {
 		List<Person> people = repository.findAll().stream().filter(p -> {
 			if(p.getEmail().contains(search))
@@ -238,16 +277,29 @@ public class PersonController {
 		return people;
 	}
 	
+	@RequestMapping(value="/people/{id}/cv/{cvid}", method=RequestMethod.DELETE)
+	public Person removeCV(@PathVariable("id") String id,  @PathVariable("cvid") String cvid) {
+		try {
+			repository.save(repository.findById(id).get().removeCV(cvid));
+		} catch (NoSuchElementException e) {
+			throw new ResourceNotFoundException("Remove Failed, Either CV or Person not Found!");
+		}
+		
+		return repository.findById(id).get();
+	}
 	
-	@RequestMapping(value="/login",method=RequestMethod.POST)
-	public Person checkLogin(@RequestBody Person user) {
+	
+	@RequestMapping(value="/login", method=RequestMethod.POST)
+	public String checkLogin(@RequestBody Person user) {
 		List<Person> p = repository.findByEmail(user.getEmail());
 		for (Person o : p) {
 			if (o.getPassword().equals(user.getPassword())) {
 				Person person = new Person(o.getId(), o.getRole());
-				return person;
+				return o.getRole();
+				//return person;
 			}
 		}
-		return new Person();
+		return "User Not Found";
+		//return new Person();
 	}	
 }
