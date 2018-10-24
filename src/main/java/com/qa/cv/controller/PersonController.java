@@ -56,7 +56,7 @@ public class PersonController {
 	@Autowired
 	private CVRepository cvrepository;
 	
-	String unApproved = "Unapproved";
+	String flagged = "Flagged";
 	String approved = "Approved";
 	
 	private String saveFileToDB(MultipartFile multipart, String id) {
@@ -148,7 +148,13 @@ public class PersonController {
 	
 	@PostMapping("/{id}/upload")
 	public String singleFileUpload(@PathVariable String id, @RequestParam("file") MultipartFile multipart) {
-		if (!(repository.findById(id).get().getCvs().size()>2)) {
+		int numberOfCVs;
+		try {
+			numberOfCVs = repository.findById(id).get().getCvs().size();
+		} catch (NoSuchElementException e) {
+			return "Invalid Person";
+		}
+		if (!(numberOfCVs>2)) {
 			return saveFileToDB(multipart, id);
 		}
 		return "You can't upload any more CV's";
@@ -166,10 +172,10 @@ public class PersonController {
 				repository.save(person);
 				return person;
 			} else {
-				throw new ResourceNotFoundException("Can't change email address", "Can't change email address", person);
+				throw new ResourceNotFoundException("Can't change email address");
 			}
 		}
-		throw new ResourceNotFoundException("Can't change email address", "Can't change email address", person);
+		throw new ResourceNotFoundException("Can't change email address");
 	  }
 	
 	@RequestMapping(value="/people",method=RequestMethod.POST)
@@ -177,7 +183,7 @@ public class PersonController {
 		List<Person> personList = repository.findByEmail(person.getEmail());
 		for(Person p:personList) {
 			if(person.getEmail().equalsIgnoreCase(p.getEmail())) {
-				throw new ResourceNotFoundException("Duplicate email", "Duplicate email", p);
+				throw new ResourceNotFoundException("Duplicate email");
 			}
 		}
 		
@@ -226,14 +232,27 @@ public class PersonController {
 	public Person updateState(@PathVariable("id") String id,  @PathVariable("cvid") String cvid) {
 		
 		String state = null;
-		String currentState = repository.findById(id).get().getCvs().stream().filter(c -> c.getFiles_id().equals(cvid)).findFirst().get().getState();
+		String currentState = null;
+		try {
+			currentState = repository.findById(id).get().getCvs().stream().filter(c -> c.getFiles_id().equals(cvid)).findFirst().get().getState();
+		} catch (NoSuchElementException e) {
+			throw new ResourceNotFoundException("Either the Person or the CV doesn't exist!");
+		}
 		
-		if (currentState.equals(unApproved)) {
+		try {
+			if (currentState.equals("Unapproved")) {
+				currentState = flagged;
+			}
+		} catch (NullPointerException e) {
+			throw new ResourceNotFoundException("User or CV not found!");
+		}
+		
+		if (currentState.equals(flagged)) {
 			state = approved; 
 		}
 		else if (currentState.equals(approved))
 		{
-			state = unApproved; 
+			state = flagged; 
 		}
 		
 		cvrepository.save(cvrepository.findByCvid(cvid).setState(state));
@@ -260,7 +279,12 @@ public class PersonController {
 	
 	@RequestMapping(value="/people/{id}/cv/{cvid}", method=RequestMethod.DELETE)
 	public Person removeCV(@PathVariable("id") String id,  @PathVariable("cvid") String cvid) {
-		repository.save(repository.findById(id).get().removeCV(cvid));
+		try {
+			repository.save(repository.findById(id).get().removeCV(cvid));
+		} catch (NoSuchElementException e) {
+			throw new ResourceNotFoundException("Remove Failed, Either CV or Person not Found!");
+		}
+		
 		return repository.findById(id).get();
 	}
 	

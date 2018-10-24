@@ -9,8 +9,8 @@ private String resourceName;
 private String fieldName;
 private Object fieldValue;
 
-public ResourceNotFoundException(String resourceName,String fieldName,Object fieldValue) {
-super(String.format("%s", resourceName, fieldName, fieldValue));
+public ResourceNotFoundException(String resourceName) {
+super(String.format("%s", resourceName));
 }
 
 public String getResourceName() {
