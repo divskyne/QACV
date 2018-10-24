@@ -16,7 +16,9 @@ import org.springframework.test.context.junit4.SpringRunner;
 import com.qa.cv.Application;
 import com.qa.cv.ReportFile;
 import com.qa.cv.model.Person;
+import com.qa.cv.model.User;
 import com.qa.cv.repo.PersonRepository;
+import com.qa.cv.repo.UserRepository;
 import com.relevantcodes.extentreports.LogStatus;
 
 
@@ -31,24 +33,28 @@ public class PersonRepositoryTest {
 	//private TestEntityManager entityManager; 
 	
 	@Autowired
-	private PersonRepository myRepo; 
+	private PersonRepository personRepo;
+	
+	@Autowired
+	private UserRepository userRepo;
 	
 	//Clear the repository before each test
 	@Before
 	public void deleteAllBeforeTests() throws Exception {
-		myRepo.deleteAll();
+		personRepo.deleteAll();
+		userRepo.deleteAll();
 		ReportFile.createReport();
 	}
 	
 	@Test
-	public void retrieveByEmailTest()
+	public void retrievePersonByEmailTest()
 	{
-		ReportFile.createTest("Retrieve CV By Email");
-		Person model1 = new Person("lwhamilton03@outlook.com", "Lucy Hamilton", "Trainee", "password");
-		myRepo.save(model1); 
-		System.out.println(model1.getEmail());
+		ReportFile.createTest("Retrieve person By Email");
+		Person person = new Person("lwhamilton03@outlook.com", "Lucy Hamilton", "Trainee", "password");
+		personRepo.save(person); 
+		System.out.println(person.getEmail());
 				
-		List<Person> checkList = myRepo.findByEmail(model1.getEmail());
+		List<Person> checkList = personRepo.findByEmail(person.getEmail());
 		
 		for(Person check:checkList)
 		{
@@ -63,9 +69,8 @@ public class PersonRepositoryTest {
 				ReportFile.logStatusTest(LogStatus.FAIL, "Person has not been retrieved by Email");
 			}
 		}
-		//findByEmail will return a list of ONE person with that email
-		
-	}
+		//findByEmail will return a list of ONE person with that email	
+	}	
 	
 	@After
 	public void tearDown()

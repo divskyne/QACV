@@ -12,15 +12,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.List;
-
-import org.bson.types.Binary;
 
 import org.apache.http.HttpEntity;
-import org.apache.http.StatusLine;
-import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
@@ -39,15 +32,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
-import org.springframework.web.multipart.MultipartFile;
 
 import com.qa.cv.CvManagerApplication;
 import com.qa.cv.ReportFile;
-import com.qa.cv.model.Cv;
 import com.qa.cv.model.Person;
 import com.qa.cv.repo.CVRepository;
 import com.qa.cv.repo.PersonRepository;
@@ -89,7 +79,7 @@ public class IntegrationTests {
 	}
 	
 	//Add person to database
-	@Test
+	@Test @Ignore
 	public void addPersonToDatabase() throws Exception {
 		
 		ReportFile.createTest("Test: Add person to database");
@@ -124,7 +114,7 @@ public class IntegrationTests {
 	}
 	
 	//Get person from database by ID
-	@Test
+	@Test @Ignore
 	public void getPersonFromDatabase() throws Exception {
 		
 		ReportFile.createTest("Test: Retrieve person from database");
@@ -160,7 +150,7 @@ public class IntegrationTests {
 	}
 	
 	//Get all people from database
-	@Test
+	@Test @Ignore
 	public void getAllPeopleFromDatabase() throws Exception {
 		
 		ReportFile.createTest("Test: Retrieve all persons from database");
@@ -199,7 +189,7 @@ public class IntegrationTests {
 	}
 	
 	//Update person in database by ID
-	@Test
+	@Test @Ignore
 	public void editOwnerInDatabase() throws Exception {
 		
 		ReportFile.createTest("Test: Update person in database");
@@ -239,7 +229,7 @@ public class IntegrationTests {
 	}
 	
 	//Delete person from database by ID
-	@Test
+	@Test @Ignore
 	public void deletePersonFromDatabase() throws Exception {
 		
 		ReportFile.createTest("Test: Delete person from database by ID");
@@ -268,7 +258,7 @@ public class IntegrationTests {
 	}
 	
 	//Search for person in database
-	@Test
+	@Test @Ignore
 	public void search() throws Exception {
 		
 		ReportFile.createTest("Test: Search for trainee");
@@ -302,7 +292,7 @@ public class IntegrationTests {
 	}
 	
 	//Login
-	@Test
+	@Test @Ignore
 	public void login() throws Exception {
 		
 		ReportFile.createTest("Test: Login");
@@ -325,7 +315,7 @@ public class IntegrationTests {
 		else ReportFile.logStatusTest(LogStatus.FAIL, "HTTP status code " + result.getResponse().getStatus() + " returned");
 	}
 	
-	//Add CV to Database
+	//Add CV to Database	
 	@Test
 	public void addCVToDatabase() throws Exception {
 		
@@ -367,7 +357,7 @@ public class IntegrationTests {
 	}
 
 	//Get CV from database by ID
-	@Test
+	@Test @Ignore
 	public void getCVFromDatabase() throws Exception {
 				
 		ReportFile.createTest("Test: Get CV from database");
